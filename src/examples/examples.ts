@@ -500,7 +500,48 @@ function getRectangleCorners(bottomLeft, topRight) {
 // However, when using manim-web in your own project, you must import and configure them.
 // See the API reference for more info: https://maloyan.github.io/manim-web/api
 
+const scene = new ZoomedScene(document.getElementById('container'), {
+  width: 800,
+  height: 450,
+  backgroundColor: BLACK,
+  zoomFactor: 0.3,
+  displayWidth: 6,
+  displayHeight: 1,
+  cameraFrameStrokeWidth: 3,
+  displayFrameStrokeWidth: 3,
+  displayFrameColor: RED,
+});
 
+// Grayscale image matching Python: np.uint8([[0, 100, 30, 200], [255, 0, 5, 33]])
+const image = new ImageMobject({
+  pixelData: [
+    [0, 100, 30, 200],
+    [255, 0, 5, 33],
+  ],
+  height: 7,
+});
+
+const dot = new Dot().shift(scaleVec(2, UL));
+
+const frameText = new Text({ text: 'Frame', color: PURPLE, fontSize: 67 });
+const zoomedCameraText = new Text({ text: 'Zoomed camera', color: RED, fontSize: 67 });
+
+scene.add(image, dot);
+
+const zoomedCamera = scene.zoomedCamera;
+const zoomedDisplay = scene.zoomedDisplay;
+const frame = zoomedCamera.frame;
+const zoomedDisplayFrame = zoomedDisplay.displayFrame;
+
+frame.moveTo(dot);
+frame.setColor(PURPLE);
+zoomedDisplayFrame.setColor(RED);
+zoomedDisplay.shift(DOWN);
+
+const zdRect = new BackgroundRectangle(zoomedDisplay, {
+  fillOpacity: 0,
+  buff: MED_SMALL_BUFF,
+});
 scene.addForegroundMobject(zdRect);
 
 const unfoldCamera = new UpdateFromFunc(zdRect, (rect) => {
@@ -535,7 +576,7 @@ await scene.wait();
 
 // Reverse pop-out: move display back to frame
 await scene.play(
-  scene.getZoomedDisplayPopOutAnimation({ rateFunc: (t: number) => smooth(1 - t) }),
+  scene.getZoomedDisplayPopOutAnimation({ rateFunc: (t) => smooth(1 - t) }),
   unfoldCamera,
 );
 await scene.play(new Uncreate(zoomedDisplayFrame), new FadeOut(frame));

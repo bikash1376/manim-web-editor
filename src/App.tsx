@@ -249,15 +249,21 @@ function ManimPreview({
 
     let userFunc: Function;
     try {
+      // Strip import statements from manim-web so users can paste code from docs
+      let processedCode = code.replace(/import\s+\{[^}]*\}\s+from\s+['"]manim-web['"];?\s*/g, '');
+      // Convert 'const/let/var scene =' to 'scene =' so it reassigns the parameter
+      // instead of redeclaring it (which causes SyntaxError)
+      processedCode = processedCode.replace(/(?:const|let|var)\s+scene\s*=/g, 'scene =');
+
       const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
-      userFunc = new AsyncFunction('scene', ...MANIM_EXPORTS, code);
+      userFunc = new AsyncFunction('scene', ...aliasedExports, processedCode);
     } catch (err: any) {
       onError(new Error(`Compilation Error: ${err.message}`));
       return;
     }
 
     let scene: any = null;
-    const isCustomContext = code.includes('new InteractiveScene(') || code.includes('new Scene(');
+    const isCustomContext = code.includes('new InteractiveScene(') || code.includes('new Scene(') || code.includes('new ZoomedScene(') || code.includes('new ThreeDScene(');
 
     if (!isCustomContext) {
       scene = new Scene(containerRef.current, {
@@ -286,5 +292,5 @@ function ManimPreview({
     };
   }, [code, onError]);
 
-  return <div id="container" ref={containerRef} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />;
+  return <div id="container" ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }} />;
 }
