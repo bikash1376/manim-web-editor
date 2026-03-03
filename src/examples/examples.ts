@@ -377,48 +377,168 @@ const animations = dots.map(
 await scene.play(new AnimationGroup(animations));`
   },
   {
-    name: "Integrated Player",
+    name: "Following Graph Camera",
+    code: `// Note: The "scene" object and all manim-web exports are available globally.
+// However, when using manim-web in your own project, you must import and configure them.
+// See the API reference for more info: https://maloyan.github.io/manim-web/api
+
+// Save camera frame state
+scene.camera.frame.saveState();
+
+// Create the axes and the curve
+const ax = new Axes({ xRange: [-1, 10], yRange: [-1, 10] });
+const graph = ax.plot((x) => Math.sin(x), { color: BLUE, xRange: [0, 3 * Math.PI] });
+
+// Create dots based on the graph
+const movingDot = new Dot({ point: ax.i2gp(graph.tMin, graph), color: ORANGE });
+const dot1 = new Dot({ point: ax.i2gp(graph.tMin, graph) });
+const dot2 = new Dot({ point: ax.i2gp(graph.tMax, graph) });
+
+scene.add(ax, graph, dot1, dot2, movingDot);
+
+// Zoom camera to 0.5x and center on moving dot
+scene.camera.frame.generateTarget();
+scene.camera.frame.targetCopy.scale(0.5);
+scene.camera.frame.targetCopy.moveTo(movingDot.getCenter());
+await scene.play(new MoveToTarget(scene.camera.frame));
+
+// Add updater so camera follows the moving dot
+const updateCurve = (mob) => {
+  mob.moveTo(movingDot.getCenter());
+};
+scene.camera.frame.addUpdater(updateCurve);
+
+// Animate dot moving along the graph path
+await scene.play(new MoveAlongPath(movingDot, { path: graph, rateFunc: linear }));
+
+// Remove updater and restore camera to original state
+scene.camera.frame.removeUpdater(updateCurve);
+await scene.play(new Restore(scene.camera.frame));`
+  },
+  {
+    name: "Point With Trace",
     code: `// Note: The "scene" object and all manim-web exports are available globally.
 // However, when using manim-web in your own project, you must import and configure them.
 // See the API reference for more info: https://maloyan.github.io/manim-web/api
 
 
-const interactiveScene = new InteractiveScene(document.getElementById('container'), {
-  width: 800,
-  height: 450,
-  backgroundColor: '#000000',
+const path = new VMobject();
+path.fillOpacity = 0;
+const dot = new Dot();
+path.setPointsAsCorners([dot.getCenter(), dot.getCenter()]);
+
+const updatePath = (pathMob) => {
+  const previousPath = pathMob.copy();
+  previousPath.addPointsAsCorners([dot.getCenter()]);
+  pathMob.become(previousPath);
+};
+path.addUpdater(updatePath);
+
+scene.add(path, dot);
+
+await scene.play(new Rotating(dot, { angle: Math.PI, aboutPoint: RIGHT, duration: 2 }));
+await scene.wait();
+await scene.play(new Shift(dot, { direction: UP }));
+await scene.play(new Shift(dot, { direction: LEFT }));
+await scene.wait();`
+  },
+  {
+    name: "Polygon On Axes",
+    code: `// Note: The "scene" object and all manim-web exports are available globally.
+// However, when using manim-web in your own project, you must import and configure them.
+// See the API reference for more info: https://maloyan.github.io/manim-web/api
+
+
+const ax = new Axes({
+  xRange: [0, 10],
+  yRange: [0, 10],
+  xLength: 6,
+  yLength: 6,
+  tips: false,
 });
 
-interactiveScene.sequence(async (scene) => {
-  // Create a blue circle
-  const circle = new Circle({ radius: 1.5, color: BLUE });
-  await scene.play(new Create(circle));
+const t = new ValueTracker(5);
+const k = 25;
 
-  await scene.wait(0.5);
+const graph = ax.plot((x) => k / x, { color: YELLOW_D, xRange: [k / 10, 10.0], numSamples: 750 });
 
-  // Transform to red square
-  const square = new Square({ sideLength: 3, color: RED });
-  await scene.play(new Transform(circle, square));
+function makeRectangle() {
+  const corners = getRectangleCorners([0, 0], [t.getValue(), k / t.getValue()]);
+  const vertices = corners.map(([x, y]) => ax.c2p(x, y));
+  const p = new Polygon({ vertices, strokeWidth: 1, color: YELLOW_B, fillOpacity: 0.5 });
+  p.fillColor = BLUE;
+  return p;
+}
 
-  // Indicate
-  await scene.play(new Indicate(circle));
+const polygon = makeRectangle();
+polygon.addUpdater(() => {
+  polygon.become(makeRectangle());
+});
 
-  // Transform to green triangle
-  const triangle = new Triangle({ color: GREEN });
-  triangle.scale(2);
-  await scene.play(new Transform(circle, triangle));
+const dot = new Dot();
+dot.addUpdater(() => dot.moveTo(ax.c2p(t.getValue(), k / t.getValue())));
 
-  // Rotate 180°
-  await scene.play(new Rotate(circle, { angle: Math.PI }));
+scene.add(ax, graph);
+await scene.play(new Create(polygon));
+scene.add(dot);
+await scene.play(t.animateTo(10));
+await scene.play(t.animateTo(k / 10));
+await scene.play(t.animateTo(5));
 
-  // Fade out
-  await scene.play(new FadeOut(circle));
+function getRectangleCorners(bottomLeft, topRight) {
+  return [
+    [topRight[0], topRight[1]],
+    [bottomLeft[0], topRight[1]],
+    [bottomLeft[0], bottomLeft[1]],
+    [topRight[0], bottomLeft[1]],
+  ];
+}`
+  },
+  {
+    name: "Moving Zoomed Scene Around",
+    code: `// Note: The "scene" object and all manim-web exports are available globally.
+// However, when using manim-web in your own project, you must import and configure them.
+// See the API reference for more info: https://maloyan.github.io/manim-web/api
 
-  // Bring in a yellow circle
-  const circle2 = new Circle({ radius: 1, color: YELLOW });
-  await scene.play(new FadeIn(circle2));
 
-  await scene.wait(1);
-});`
+scene.addForegroundMobject(zdRect);
+
+const unfoldCamera = new UpdateFromFunc(zdRect, (rect) => {
+  rect.replace(zoomedDisplay);
+});
+
+frameText.nextTo(frame, DOWN);
+
+await scene.play(new Create(frame), new FadeIn(frameText, { shift: UP }));
+scene.activateZooming();
+
+// Pop-out animation: display pops from frame position to its shifted position
+await scene.play(scene.getZoomedDisplayPopOutAnimation(), unfoldCamera);
+
+zoomedCameraText.nextTo(zoomedDisplayFrame, DOWN);
+await scene.play(new FadeIn(zoomedCameraText, { shift: UP }));
+
+// Scale frame and display non-uniformly
+await scene.play(
+  new Scale(frame, { scaleFactor: [0.5, 1.5, 0] }),
+  new Scale(zoomedDisplay, { scaleFactor: [0.5, 1.5, 0] }),
+  new FadeOut(zoomedCameraText),
+  new FadeOut(frameText),
+);
+await scene.wait();
+
+await scene.play(new ScaleInPlace(zoomedDisplay, { scaleFactor: 2 }));
+await scene.wait();
+
+await scene.play(new Shift(frame, { direction: scaleVec(2.5, RIGHT) }));
+await scene.wait();
+
+// Reverse pop-out: move display back to frame
+await scene.play(
+  scene.getZoomedDisplayPopOutAnimation({ rateFunc: (t: number) => smooth(1 - t) }),
+  unfoldCamera,
+);
+await scene.play(new Uncreate(zoomedDisplayFrame), new FadeOut(frame));
+await scene.wait();`
   }
 ];

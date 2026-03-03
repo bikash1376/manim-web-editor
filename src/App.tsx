@@ -36,8 +36,10 @@ await scene.play(new FadeOut(square));
 scene.render();
 `;
 
-const MANIM_EXPORTS = Object.keys(manim).filter(key => key !== 'default');
-const MANIM_VALUES = MANIM_EXPORTS.map(key => (manim as any)[key]);
+const MANIM_EXPORTS = Object.keys(manim).filter(key => key !== 'default' && key !== 'Player'); // Remove Player if it somehow got in to prevent duplicates
+// Alias 'Player' to 'InteractiveScene' for users returning from old docs without needing imports
+const aliasedExports = [...MANIM_EXPORTS, 'Player'];
+const MANIM_VALUES = [...MANIM_EXPORTS.map(key => (manim as any)[key]), (manim as any).InteractiveScene || (manim as any).Scene];
 
 const engine = new Styletron();
 
