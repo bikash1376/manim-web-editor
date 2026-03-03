@@ -1,73 +1,40 @@
-# React + TypeScript + Vite
+# manim-web-editor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive browser-based code editor for creating mathematical animations with [manim-web](https://github.com/maloyan/manim-web).
 
-Currently, two official plugins are available:
+Write animation code in the built-in editor, hit **Play Animation**, and see the result instantly — no build step or local setup needed.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **Live Preview** — Execute manim-web code and see animations rendered in real-time
+- **Example Gallery** — Load pre-built examples covering shapes, transforms, graphs, 3D scenes, and more
+- **Autocomplete** — Intelligent code completions for all manim-web exports
+- **Dark / Light Mode** — Toggle between themes
+- **Editor Zoom** — Ctrl/Cmd + Scroll to zoom the code editor
+- **Custom Scenes** — Supports `ZoomedScene`, `ThreeDScene`, `InteractiveScene`, and standard `Scene`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting Started
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Built With
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vite.dev/)
+- [manim-web](https://github.com/maloyan/manim-web) — Mathematical animation engine
+- [CodeMirror](https://codemirror.net/) via [@uiw/react-codemirror](https://github.com/uiwjs/react-codemirror)
+- [Base Web](https://baseweb.design/) — UI components
+
+## Links
+
+- **manim-web GitHub**: [github.com/maloyan/manim-web](https://github.com/maloyan/manim-web)
+- **API Docs**: [maloyan.github.io/manim-web](https://maloyan.github.io/manim-web/)
+
+## License
+
+MIT

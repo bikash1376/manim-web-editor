@@ -109,6 +109,12 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
   const handleExampleSelect = (params: any) => {
     setSelectedExample(params.value);
     if (params.value.length > 0) {
+      if (params.value[0].id === '__blank__') {
+        setCode('// Start writing your manim-web code here...\n');
+        setRunCode('');
+        setCompileTrigger(prev => prev + 1);
+        return;
+      }
       const selected = EXAMPLES.find(e => e.name === params.value[0].id);
       if (selected) {
         setCode(selected.code);
@@ -119,7 +125,10 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
     }
   };
 
-  const exampleOptions = EXAMPLES.map(ex => ({ id: ex.name, label: ex.name }));
+  const exampleOptions = [
+    { id: '__blank__', label: '✏️ Blank Editor' },
+    ...EXAMPLES.map(ex => ({ id: ex.name, label: ex.name }))
+  ];
 
   return (
     <div className="app-container">
@@ -142,6 +151,20 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
               onChange={handleExampleSelect}
               clearable={false}
               searchable={false}
+              overrides={{
+                Dropdown: {
+                  style: { zIndex: 200 }
+                },
+                Popover: {
+                  props: {
+                    overrides: {
+                      Body: {
+                        style: { zIndex: 200 }
+                      }
+                    }
+                  }
+                }
+              }}
             />
           </div>
           <Button

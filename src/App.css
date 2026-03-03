@@ -137,11 +137,9 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-  background-image:
-    linear-gradient(var(--border-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
-  background-size: 20px 20px;
-  background-position: center center;
+  background:
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.03) 0%, transparent 70%),
+    linear-gradient(160deg, #0d1117 0%, #161b22 40%, #0d1117 100%);
 }
 
 /* Make sure the manim canvas scales properly but keeps aspect ratio */
