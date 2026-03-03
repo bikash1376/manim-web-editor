@@ -32,7 +32,7 @@ import { Button, KIND, SHAPE } from 'baseui/button';
 import { Select } from 'baseui/select';
 
 // Icons used throughout the UI
-import { FaPlay, FaMoon, FaSun, FaGithub, FaBook, FaEdit } from 'react-icons/fa';
+import { FaPlay, FaMoon, FaSun, FaGithub, FaBook } from 'react-icons/fa';
 
 import { EXAMPLES } from './examples/examples';
 import './App.css';
@@ -239,9 +239,9 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
             overrides={{
               BaseButton: {
                 style: {
-                  backgroundColor: '#fff',
-                  color: '#000',
-                  ':hover': { backgroundColor: '#e2e2e2' },
+                  backgroundColor: isDark ? '#fff' : '#1a1a2e',
+                  color: isDark ? '#000' : '#fff',
+                  ':hover': { backgroundColor: isDark ? '#e2e2e2' : '#2d2d44' },
                 }
               }
             }}
