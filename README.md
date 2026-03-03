@@ -1,5 +1,9 @@
 # manim-web-editor
 
+> **Note:** This project is currently in active development and may contain bugs. If you encounter any issues, please [report them here](https://github.com/bikash1376/manim-web-editor/issues/new).
+>
+> For reference material, see the [official manim-web documentation](https://maloyan.github.io/manim-web/) and the [official manim-web GitHub repository](https://github.com/maloyan/manim-web).
+
 An interactive browser-based code editor for creating mathematical animations with [manim-web](https://github.com/maloyan/manim-web).
 
 Write animation code in the built-in editor, hit **Play Animation**, and see the result instantly — no build step or local setup needed.
@@ -8,10 +12,9 @@ Write animation code in the built-in editor, hit **Play Animation**, and see the
 
 - **Live Preview** — Execute manim-web code and see animations rendered in real-time
 - **Example Gallery** — Load pre-built examples covering shapes, transforms, graphs, 3D scenes, and more
-- **Autocomplete** — Intelligent code completions for all manim-web exports
-- **Dark / Light Mode** — Toggle between themes
-- **Editor Zoom** — Ctrl/Cmd + Scroll to zoom the code editor
-- **Custom Scenes** — Supports `ZoomedScene`, `ThreeDScene`, `InteractiveScene`, and standard `Scene`
+- **Autocomplete** — Intelligent code completions for all manim-web exports (sucks)
+- **Dark / Light Mode** — Toggle between themes (in Big 2026)
+- **Already imported** — No need to import manim-web exports (bugs)
 
 ## Getting Started
 
@@ -35,6 +38,4 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 - **manim-web GitHub**: [github.com/maloyan/manim-web](https://github.com/maloyan/manim-web)
 - **API Docs**: [maloyan.github.io/manim-web](https://maloyan.github.io/manim-web/)
 
-## License
 
-MIT

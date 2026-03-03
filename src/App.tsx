@@ -1,25 +1,46 @@
+/**
+ * App.tsx
+ *
+ * Main application component for the Manim-Web Editor.
+ * Provides a split-pane layout with a CodeMirror code editor on the left
+ * and a live animation preview on the right. Users can write manim-web code,
+ * load built-in examples, toggle dark/light themes, and zoom the editor.
+ */
+
 import { useState, useEffect, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript, javascriptLanguage } from '@codemirror/lang-javascript';
 import { manimAutocomplete } from './autocomplete';
 
+/**
+ * Register the manim-web autocomplete provider with CodeMirror's JavaScript language.
+ * This allows manim-web exports to appear as suggestions while the user types.
+ */
 const manimGlobalsCompletion = javascriptLanguage.data.of({
   autocomplete: manimAutocomplete
 });
+
 import { vscodeDark } from '@uiw/codemirror-theme-vscode';
 import { Scene } from 'manim-web';
 import * as manim from 'manim-web';
 
+// UI framework imports (Base Web + Styletron for theming)
 import { Client as Styletron } from 'styletron-engine-atomic';
 import { Provider as StyletronProvider } from 'styletron-react';
 import { DarkTheme, LightTheme, BaseProvider } from 'baseui';
 import { Button, KIND, SHAPE } from 'baseui/button';
 import { Select } from 'baseui/select';
-import { FaPlay, FaMoon, FaSun, FaGithub, FaBook } from 'react-icons/fa';
+
+// Icons used throughout the UI
+import { FaPlay, FaMoon, FaSun, FaGithub, FaBook, FaEdit } from 'react-icons/fa';
 
 import { EXAMPLES } from './examples/examples';
 import './App.css';
 
+/**
+ * Default code shown in the editor on initial load.
+ * Demonstrates basic shape creation, animation, and rendering.
+ */
 const DEFAULT_CODE = `// Welcome to the Manim-Web Editor!
 // The "scene" object and all Manim exports are available globally.
 
@@ -36,16 +57,31 @@ await scene.play(new FadeOut(square));
 scene.render();
 `;
 
-const MANIM_EXPORTS = Object.keys(manim).filter(key => key !== 'default' && key !== 'Player'); // Remove Player if it somehow got in to prevent duplicates
-// Alias 'Player' to 'InteractiveScene' for users returning from old docs without needing imports
+/**
+ * Collect all named exports from the manim-web library (excluding 'default' and 'Player').
+ * These are injected as parameters into the user's code sandbox so they can be
+ * referenced without import statements (e.g. `new Circle(...)` just works).
+ */
+const MANIM_EXPORTS = Object.keys(manim).filter(key => key !== 'default' && key !== 'Player');
+
+/**
+ * Alias 'Player' to 'InteractiveScene' for backward compatibility.
+ * Some older docs reference a `Player` class that maps to `InteractiveScene`.
+ */
 const aliasedExports = [...MANIM_EXPORTS, 'Player'];
 const MANIM_VALUES = [...MANIM_EXPORTS.map(key => (manim as any)[key]), (manim as any).InteractiveScene || (manim as any).Scene];
 
+/** Styletron CSS-in-JS engine instance for Base Web UI components */
 const engine = new Styletron();
 
+/**
+ * Root App component.
+ * Manages the dark/light theme state and wraps everything in Styletron + BaseUI providers.
+ */
 export default function App() {
   const [isDark, setIsDark] = useState(true);
 
+  // Sync the theme state with the document body class for CSS variable switching
   useEffect(() => {
     if (isDark) {
       document.body.classList.remove('light-mode');
@@ -63,19 +99,29 @@ export default function App() {
   );
 }
 
+/**
+ * Main layout component.
+ * Contains the header (logo, links, example selector, play button, theme toggle)
+ * and the split-pane editor/preview layout.
+ */
 function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => void }) {
   const [code, setCode] = useState(DEFAULT_CODE);
-  const [runCode, setRunCode] = useState(DEFAULT_CODE); // holds code to be executed
-  const [compileTrigger, setCompileTrigger] = useState(0);
+  const [runCode, setRunCode] = useState(DEFAULT_CODE); // The code snapshot sent to ManimPreview
+  const [compileTrigger, setCompileTrigger] = useState(0); // Incremented to force re-execution
   const [error, setError] = useState<string | null>(null);
 
-  // Example Selection state
+  // Currently selected example in the dropdown
   const [selectedExample, setSelectedExample] = useState<any[]>([]);
 
-  // Font Size for editor zoom
+  // Editor font size (adjusted by Ctrl/Cmd + scroll wheel)
   const [fontSize, setFontSize] = useState(14);
   const editorRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Attach a wheel event listener to the editor wrapper for zoom functionality.
+   * Ctrl/Cmd + scroll up = increase font size, scroll down = decrease.
+   * Font size is clamped between 8px and 48px.
+   */
   useEffect(() => {
     const el = editorRef.current;
     if (!el) return;
@@ -95,10 +141,14 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
     return () => el.removeEventListener('wheel', handleWheel);
   }, []);
 
+  /**
+   * Handle the "Play Animation" button click.
+   * If the code hasn't changed since the last run, increment the trigger to
+   * force a re-render/re-execution. Otherwise, update the run code snapshot.
+   */
   const handleRun = () => {
     setError(null);
     if (runCode === code) {
-      // If code is the same, re-trigger execution to replay
       setCompileTrigger(prev => prev + 1);
     } else {
       setRunCode(code);
@@ -106,9 +156,15 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
     }
   };
 
+  /**
+   * Handle example selection from the dropdown.
+   * If "Blank Editor" is selected, reset to a clean state.
+   * Otherwise, load the selected example's code into the editor.
+   */
   const handleExampleSelect = (params: any) => {
     setSelectedExample(params.value);
     if (params.value.length > 0) {
+      // Handle the special "Blank Editor" option
       if (params.value[0].id === '__blank__') {
         setCode('// Start writing your manim-web code here...\n');
         setRunCode('');
@@ -118,21 +174,27 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
       const selected = EXAMPLES.find(e => e.name === params.value[0].id);
       if (selected) {
         setCode(selected.code);
-        // Clear the current running animation so it goes blank
+        // Clear the preview so previous animations don't persist
         setRunCode('');
         setCompileTrigger(prev => prev + 1);
       }
     }
   };
 
+  /**
+   * Dropdown options list.
+   * Starts with a "Blank Editor" option, followed by all pre-built examples.
+   */
   const exampleOptions = [
-    { id: '__blank__', label: '✏️ Blank Editor' },
+    { id: '__blank__', label: 'Blank Editor' },
     ...EXAMPLES.map(ex => ({ id: ex.name, label: ex.name }))
   ];
 
   return (
     <div className="app-container">
+      {/* ===== HEADER BAR ===== */}
       <header className="app-header">
+        {/* Logo and navigation links */}
         <div className="logo-container" style={{ gap: '16px' }}>
           <span className="app-title" style={{ fontFamily: 'monospace', fontSize: '18px' }}>manim-web-editor</span>
           <a href="https://github.com/maloyan/manim-web" target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-main)', textDecoration: 'none', fontSize: '14px', fontWeight: 500 }}>
@@ -142,6 +204,8 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
             <FaBook size={16} /> Docs
           </a>
         </div>
+
+        {/* Controls: example selector, play button, theme toggle */}
         <div className="controls">
           <div style={{ width: '250px' }}>
             <Select
@@ -167,6 +231,8 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
               }}
             />
           </div>
+
+          {/* Play Animation button */}
           <Button
             onClick={handleRun}
             startEnhancer={<FaPlay />}
@@ -182,6 +248,8 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
           >
             Play Animation
           </Button>
+
+          {/* Dark/Light mode toggle */}
           <Button
             onClick={toggleTheme}
             kind={KIND.secondary}
@@ -197,7 +265,9 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
         </div>
       </header>
 
+      {/* ===== SPLIT PANE: Editor + Preview ===== */}
       <div className="split-pane">
+        {/* Left pane: CodeMirror code editor */}
         <div className="editor-pane">
           <div className="pane-header">Code Editor</div>
           <div className="editor-wrapper" ref={editorRef}>
@@ -225,9 +295,11 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
           </div>
         </div>
 
+        {/* Right pane: Animation preview output */}
         <div className="preview-pane">
           <div className="pane-header">Preview Output</div>
           <div className="preview-container">
+            {/* Error overlay — displayed above the canvas when compilation/runtime errors occur */}
             {error && (
               <div className="error-overlay">
                 <div className="error-header">
@@ -240,6 +312,7 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
               </div>
             )}
 
+            {/* ManimPreview handles code execution and canvas rendering */}
             <ManimPreview
               key={compileTrigger}
               code={runCode}
@@ -252,6 +325,19 @@ function Main({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () => voi
   );
 }
 
+/**
+ * ManimPreview component.
+ *
+ * Takes user code as a string, compiles it into an async function, and executes
+ * it within a sandboxed context where all manim-web exports are available as
+ * local variables. The animation output is rendered into a container div.
+ *
+ * Key behaviors:
+ * - Strips `import { ... } from 'manim-web'` so users can paste doc code directly
+ * - Converts `const scene =` to `scene =` to avoid redeclaring the injected parameter
+ * - Detects custom scene types (ZoomedScene, ThreeDScene, etc.) and skips default Scene creation
+ * - Handles cleanup on unmount by disposing scenes and clearing the container
+ */
 function ManimPreview({
   code,
   onError
@@ -264,7 +350,7 @@ function ManimPreview({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Clear container if no code to run
+    // If there's no code to run, clear the container and exit early
     if (!code.trim()) {
       containerRef.current.innerHTML = '';
       return;
@@ -272,12 +358,16 @@ function ManimPreview({
 
     let userFunc: Function;
     try {
-      // Strip import statements from manim-web so users can paste code from docs
+      // Strip `import { ... } from 'manim-web'` statements so users can paste
+      // code directly from the docs without getting SyntaxError
       let processedCode = code.replace(/import\s+\{[^}]*\}\s+from\s+['"]manim-web['"];?\s*/g, '');
-      // Convert 'const/let/var scene =' to 'scene =' so it reassigns the parameter
-      // instead of redeclaring it (which causes SyntaxError)
+
+      // Convert 'const/let/var scene =' to 'scene =' (reassignment) so it doesn't
+      // conflict with the 'scene' parameter injected by the AsyncFunction constructor
       processedCode = processedCode.replace(/(?:const|let|var)\s+scene\s*=/g, 'scene =');
 
+      // Create an async function with 'scene' + all manim exports as named parameters.
+      // This makes every manim-web export available as a local variable in the user's code.
       const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
       userFunc = new AsyncFunction('scene', ...aliasedExports, processedCode);
     } catch (err: any) {
@@ -285,10 +375,13 @@ function ManimPreview({
       return;
     }
 
+    // Determine if the user's code creates its own scene (custom context).
+    // If so, we skip creating a default Scene to avoid conflicts.
     let scene: any = null;
     const isCustomContext = code.includes('new InteractiveScene(') || code.includes('new Scene(') || code.includes('new ZoomedScene(') || code.includes('new ThreeDScene(');
 
     if (!isCustomContext) {
+      // Create a default Scene attached to the container for simple examples
       scene = new Scene(containerRef.current, {
         width: 800,
         height: 450,
@@ -296,6 +389,7 @@ function ManimPreview({
       });
     }
 
+    // Execute the user's code asynchronously, passing the scene and all manim exports
     const runScript = async () => {
       try {
         await userFunc(scene, ...MANIM_VALUES);
@@ -306,14 +400,17 @@ function ManimPreview({
 
     runScript();
 
+    // Cleanup: dispose the scene and clear the container when the component unmounts
+    // or when new code is submitted
     return () => {
       if (scene && scene.dispose) scene.dispose();
-      // Since users might create their own Player/Scene on #container, empty it fully
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
     };
   }, [code, onError]);
 
+  // The container div where manim-web renders its canvas.
+  // Uses position:relative so ZoomedScene can position its zoomed display overlay.
   return <div id="container" ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }} />;
 }
