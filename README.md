@@ -4,7 +4,7 @@
 >
 > For reference material, see the [official manim-web documentation](https://maloyan.github.io/manim-web/) and the [official manim-web GitHub repository](https://github.com/maloyan/manim-web).
 
-<video src="./public/manim-web-editor-demo.mp4" autoplay loop muted ></video>
+<video src="./public/manim-web-editor-demo (1).gif" autoplay loop muted ></video>
 
 An interactive browser-based code editor for creating mathematical animations with [manim-web](https://github.com/maloyan/manim-web).
 
